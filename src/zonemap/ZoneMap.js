@@ -203,6 +203,18 @@ class ZoneMap extends Collection {
 	 * @static
 	 */
 	static stringify(zoneMap, space = 0) {
+		const zm = ZoneMap.fullMapAsJObject(zoneMap);
+
+		// Does not stringify private keys.
+		function replacer(key, val) {
+			if (key.startsWith('_')) return undefined;
+			return val;
+		}
+
+		return JSON.stringify(zm, replacer, space);
+	}
+
+	static fullMapAsJObject(zoneMap) {
 		// Creates a new blank object like ZoneMap.
 		const zm = {};
 
@@ -212,13 +224,7 @@ class ZoneMap extends Collection {
 		// Converts all ZoneMap's entries into [ [key], [val] ].
 		zm.sectors = [...zoneMap];
 
-		// Does not stringify private keys.
-		function replacer(key, val) {
-			if (key.startsWith('_')) return undefined;
-			return val;
-		}
-
-		return JSON.stringify(zm, replacer, space);
+		return zm;
 	}
 }
 

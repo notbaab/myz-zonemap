@@ -235,6 +235,8 @@ import dragscroll from 'dragscroll';
 import ZoneMap from '@/zonemap/ZoneMap';
 import Util from '@/util/Util';
 
+import { FancyWebSocket } from '@/util/WebSocketEventDispatcher';
+
 export default {
 	name: 'zonescreen',
 	props: {
@@ -242,7 +244,8 @@ export default {
 			type: ZoneMap,
 			// default: null
 			default: () => new ZoneMap()
-		}
+		},
+		mapId: Number
 	},
 	data: function() {
 		return {
@@ -272,6 +275,22 @@ export default {
 			e.preventDefault();
 			e.returnValue = 'Are you sure you want to quit?';
 		});
+		let wsPort = process.env.VUE_APP_WEBSOCKET_PORT;
+		if (wsPort  === undefined)
+		{
+			wsPort = window.location.port;
+			console.log("No port env, using window");
+		}
+    	let wsUrl = "ws://" +
+				    window.location.hostname +
+				    ":" +
+				    wsPort +
+				    "/ws/12345";
+  		this.connection = new FancyWebSocket(wsUrl);
+
+  		// this.connection.bind("connect", this.handleInitialConnection, this);
+  		this.connection.bind("state", this.handleState, this);
+  		// this.connection.bind("message", this.onMessage, this);
 	},
 	computed: {
 		interfaceTitle: function() {
@@ -307,6 +326,7 @@ export default {
 			this.zonemapChangeCount++;
 			if (sector) this.zonemap.set(this.selectedCoord, sector);
 			else this.zonemap.delete(this.selectedCoord);
+			this.sendZoneMap();
 		},
 		saveZonemap() {
 			localStorage.zonemap = ZoneMap.stringify(this.zonemap);
@@ -323,6 +343,17 @@ export default {
 			document.body.appendChild(downloadLink);
 			downloadLink.click();
 			document.body.removeChild(downloadLink);
+		},
+		handleState(data) {
+			console.log(data);
+			let jsonData = JSON.stringify(data);
+			this.zonemap = ZoneMap.parse(jsonData);
+		},
+		sendZoneMap() {
+			let zoneMap = ZoneMap.fullMapAsJObject(this.zonemap);
+			this.connection.send("state", zoneMap);
+			console.log(zoneMap);
+			this.zonemapChangeCount = 0;
 		},
 		onZoneBgChange(e) {
 			const files = e.target.files || e.dataTransfer.files;

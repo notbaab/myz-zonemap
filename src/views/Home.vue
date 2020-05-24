@@ -154,6 +154,8 @@ import zmFileInput from '@/components/FileInput.vue';
 import ZoneMap from '@/zonemap/ZoneMap';
 import ZonemapStorage from '@/zonemap/ZonemapStorage';
 
+import FancyWebSocket from '@/util/WebSocketEventDispatcher';
+
 export default {
 	name: 'home',
 	data: () => ({
@@ -178,7 +180,12 @@ export default {
 		zonemapFile: null,
 
 		// PREV-MAP BUTTON
-		hasPreviousMap: false
+		hasPreviousMap: false,
+
+		// LOAD-MAP DIALOG
+		joinMapDialog: false,
+		mapId: 12345,
+		// joinExistingMap: false
 	}),
 	beforeMount: function() {
 		const zm = ZonemapStorage.get();
@@ -212,6 +219,33 @@ export default {
 
 			if (zm) this.gotoZonescreen(zm);
 		},
+
+		existingMapLoaded(mapData) {
+			if (mapData.error !== undefined) {
+				console.log('Nope');
+				alert("Couldn't load map" + this.mapId + ". Ask Erik WTF.");
+				return;
+			}
+
+			const zm = ZoneMap.parse(mapData);
+			if (zm) {
+				this.gotoZonescreen(zm, this.mapId);
+			}
+		},
+
+		async joinExistingMap() {
+			let url = window.location.protocol + "//" + window.location.host + "/room-data/" + this.mapId;
+			fetch(url, {
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			})
+			.then(response => response.json())
+			.then(data => this.existingMapLoaded(data))
+			.catch((error) => {
+				console.error('Error:', error);
+			})
+		},
 		zonemapInputChange(e) {
 			const files = e.target.files || e.dataTransfer.files;
 			if (files.length) this.zonemapFile = files[0];
@@ -223,12 +257,13 @@ export default {
 			const zm = ZoneMap.parse(zonemapJson);
 			if (zm) this.gotoZonescreen(zm);
 		},
-		gotoZonescreen(zonemap) {
+		gotoZonescreen(zonemap, id) {
 			// this.$root.zonemap = this.zonemap;
 			this.$router.push({
 				name: 'zonescreen',
 				params: {
-					passingZonemap: zonemap
+					passingZonemap: zonemap,
+					mapId: id,
 				}
 			});
 		}

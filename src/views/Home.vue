@@ -16,6 +16,8 @@
 		<div class="map-buttons">
 			<a id="new-map" class="btn btn-lg btn-outline-light" @click="newMapDialog = true"><span class="mdi mdi-file"></span>Create a new Map</a>
 			<a id="open-map" class="btn btn-lg btn-outline-light" @click="openMapDialog = true"><span class="mdi mdi-folder-open"></span>Open an existing Map</a>
+			<a id="join-map" class="btn btn-lg btn-outline-light" @click="joinMapDialog = true"><span class="mdi mdi-folder-open"></span>Join Server Map By Id</a>
+
 			<a id="previous-map" class="btn btn-lg btn-outline-light" v-show="hasPreviousMap" @click="previousMap()"><span class="mdi mdi-road-variant"></span>Load last Map</a>
 		</div>
 
@@ -131,16 +133,25 @@
 		</v-container>
 	</v-dialog>
 
-	<!-- LOADING DIALOG ================================================== -->
-	<v-dialog v-model="loadingDialog" dark>
-		<v-container class="modal-content px-5">
-			<v-layout column>
-				<h2>Loading ...</h2>
-				<p>Please wait while the application is processing <b>The Zone</b>.</p>
-				<v-progress-linear indeterminate />
-			</v-layout>
-		</v-container>
-	</v-dialog>
+    <!-- OPEN-MAP DIALOG ================================================== -->
+    <v-dialog v-model="joinMapDialog" width="600px">
+        <v-container class="modal-content px-5">
+            <v-layout column>
+                <h2>Join Map Stored on Server</h2>
+                <p>Join a map by id.</p>
+                <v-form ref="openMapForm">
+                    <v-text-field
+                        v-model="mapId"
+                        label="Map ID"
+                        type="number"
+                        required
+                    />
+                    <v-btn :loading="loadingDialog" @click="joinExistingMap()">join</v-btn>
+                    <v-btn @click="joinMapDialog = false">Cancel</v-btn>
+                </v-form>
+            </v-layout>
+        </v-container>
+    </v-dialog>
 
 	<!-- FOOTER =========================================================== -->
 	<zm-footer></zm-footer>

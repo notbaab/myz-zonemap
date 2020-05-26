@@ -235,7 +235,7 @@ import dragscroll from 'dragscroll';
 import ZoneMap from '@/zonemap/ZoneMap';
 import Util from '@/util/Util';
 
-import { FancyWebSocket } from '@/util/WebSocketEventDispatcher';
+import { BackendApi } from '@/util/BackendApi';
 
 export default {
 	name: 'zonescreen',
@@ -245,7 +245,10 @@ export default {
 			// default: null
 			default: () => new ZoneMap()
 		},
-		mapId: Number
+		backendApi: {
+			type: BackendApi,
+			default: () => undefined
+		}
 	},
 	data: function() {
 		return {
@@ -275,22 +278,12 @@ export default {
 			e.preventDefault();
 			e.returnValue = 'Are you sure you want to quit?';
 		});
-		let wsPort = process.env.VUE_APP_WEBSOCKET_PORT;
-		if (wsPort  === undefined)
-		{
-			wsPort = window.location.port;
-			console.log("No port env, using window");
-		}
-    	let wsUrl = "ws://" +
-				    window.location.hostname +
-				    ":" +
-				    wsPort +
-				    "/ws/12345";
-  		this.connection = new FancyWebSocket(wsUrl);
 
-  		// this.connection.bind("connect", this.handleInitialConnection, this);
-  		this.connection.bind("state", this.handleState, this);
-  		// this.connection.bind("message", this.onMessage, this);
+		if(this.backendApi === undefined) {
+			return;
+		}
+
+		this.backendApi.listenForMessages(this.handleState);
 	},
 	computed: {
 		interfaceTitle: function() {
@@ -344,16 +337,12 @@ export default {
 			downloadLink.click();
 			document.body.removeChild(downloadLink);
 		},
-		handleState(data) {
-			console.log(data);
-			let jsonData = JSON.stringify(data);
-			this.zonemap = ZoneMap.parse(jsonData);
+		handleState(zm) {
+			this.zonemap = zm;
 		},
 		sendZoneMap() {
-			let zoneMap = ZoneMap.fullMapAsJObject(this.zonemap);
-			this.connection.send("state", zoneMap);
-			console.log(zoneMap);
 			this.zonemapChangeCount = 0;
+			this.backendApi.updateState(this.zonemap)
 		},
 		onZoneBgChange(e) {
 			const files = e.target.files || e.dataTransfer.files;

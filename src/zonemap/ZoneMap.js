@@ -130,16 +130,11 @@ class ZoneMap extends Collection {
 	}
 
 	/**
-	 * Converts a ZoneMap JavaScript Object Notation (JSON) string into a ZoneMap object.
-	 * If a member contains nested objects, the nested objects are transformed before the parent object is.
-	 * @method JSON.parse()
-	 * @param {string} text A valid ZoneMap JSON string
-	 * @returns {ZoneMap}
-	 * @static
+	 * Take a JavaScript object and turn it into a zone map object
+	 * @param  {JSON Object} A json object produced from a JSON.parse on json of a valid map
+	 * @return {[ZoneMap]}
 	 */
-	static parse(text) {
-		const data = JSON.parse(text);
-
+	static copyFromJObject(data) {
 		// Parses all sectors from API 1.0.
 		if (data.map_version === '1.0.0') {
 			const sectors = [];
@@ -195,6 +190,19 @@ class ZoneMap extends Collection {
 	}
 
 	/**
+	 * Converts a ZoneMap JavaScript Object Notation (JSON) string into a ZoneMap object.
+	 * If a member contains nested objects, the nested objects are transformed before the parent object is.
+	 * @method JSON.parse()
+	 * @param {string} text A valid ZoneMap JSON string
+	 * @returns {ZoneMap}
+	 * @static
+	 */
+	static parse(text) {
+		const data = JSON.parse(text);
+		return ZoneMap.copyFromJObject(data);
+	}
+
+	/**
 	 * Converts a ZoneMap object to a JavaScript Object Notation (JSON) string.
 	 * @method JSON.stringify()
 	 * @param {ZoneMap} zoneMap A ZoneMap object to be converted
@@ -214,6 +222,11 @@ class ZoneMap extends Collection {
 		return JSON.stringify(zm, replacer, space);
 	}
 
+	/**
+	 * Convert a ZoneMap object to a simple javascript object that is JSON serializable
+	 * @param  {ZoneMap} zoneMap A ZoneMap object to be converted to a regular object
+	 * @return  {Object} An object produced from a JSON.parse on json of a valid map
+	 */
 	static fullMapAsJObject(zoneMap) {
 		// Creates a new blank object like ZoneMap.
 		const zm = {};

@@ -154,7 +154,7 @@ import zmFileInput from '@/components/FileInput.vue';
 import ZoneMap from '@/zonemap/ZoneMap';
 import ZonemapStorage from '@/zonemap/ZonemapStorage';
 
-import FancyWebSocket from '@/util/WebSocketEventDispatcher';
+import { BackendApi } from  '@/util/BackendApi';
 
 export default {
 	name: 'home',
@@ -219,32 +219,17 @@ export default {
 
 			if (zm) this.gotoZonescreen(zm);
 		},
-
-		existingMapLoaded(mapData) {
-			if (mapData.error !== undefined) {
-				console.log('Nope');
-				alert("Couldn't load map" + this.mapId + ". Ask Erik WTF.");
-				return;
-			}
-
-			const zm = ZoneMap.parse(mapData);
-			if (zm) {
-				this.gotoZonescreen(zm, this.mapId);
-			}
-		},
-
 		async joinExistingMap() {
-			let url = window.location.protocol + "//" + window.location.host + "/room-data/" + this.mapId;
-			fetch(url, {
-				headers: {
-					'Content-Type': 'application/json',
-				},
-			})
-			.then(response => response.json())
-			.then(data => this.existingMapLoaded(data))
-			.catch((error) => {
-				console.error('Error:', error);
-			})
+			let backendPort = process.env.VUE_APP_WEBSOCKET_PORT;
+			if (backendPort  === undefined)
+			{
+				backendPort = window.location.port;
+			}
+			let backend = new BackendApi(this.mapId, window.location.hostname, backendPort);
+			let that = this;
+			backend.fetchMap((zonemap) => {
+				that.gotoZonescreen(zonemap, backend);
+			});
 		},
 		zonemapInputChange(e) {
 			const files = e.target.files || e.dataTransfer.files;
@@ -257,13 +242,13 @@ export default {
 			const zm = ZoneMap.parse(zonemapJson);
 			if (zm) this.gotoZonescreen(zm);
 		},
-		gotoZonescreen(zonemap, id) {
+		gotoZonescreen(zonemap, backendApi) {
 			// this.$root.zonemap = this.zonemap;
 			this.$router.push({
 				name: 'zonescreen',
 				params: {
 					passingZonemap: zonemap,
-					mapId: id,
+					backendApi: backendApi,
 				}
 			});
 		}
